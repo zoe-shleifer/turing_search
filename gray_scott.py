@@ -78,6 +78,9 @@ class gs:
         #print(A[0,10:20])
         for t in range(N_simulation_steps):
             A, B = self.gray_scott_update(A, B, self.DA, self.DB, self.f, self.k, delta_t)
+            test = A[0].sum()
+            if((test>199.9999 and test<200) or np.isnan(test)):
+                 break
         #print(A[0,10:20])
         self.A, self.B = A,B
 from time import time
@@ -90,14 +93,14 @@ def slow_function(gs_obj):
 def run_threads(params):
         nthreads = params.shape[1]
         objs = [gs(*(params[:,i])) for i in range(nthreads)]
-        return Parallel(n_jobs=4)(delayed(slow_function)(objs[i]) for i in range(len(objs)))
+        return Parallel(n_jobs=6)(delayed(slow_function)(objs[i]) for i in range(len(objs)))
 if __name__ == "__main__":
-    DA_values = np.linspace(0.12, 0.18, num=4)
-    DB_values = np.linspace(0.06, 0.12, num=4)
-    f_values = np.linspace(0.05, 0.06, num=5)
-    k_values = np.linspace(0.055, 0.065, num=5)
+    DA_values = np.linspace(0.12, 0.18, num=20)
+    DB_values = np.linspace(0.06, 0.12, num=20)
+    f_values = np.linspace(0.05, 0.06, num=20)
+    k_values = np.linspace(0.055, 0.065, num=20)
 
-    nthreads = 30
+    nthreads = 1000
     params = np.zeros((4, nthreads))
     params[0, :] = np.random.choice(DA_values, nthreads)  # Choose randomly from DA_values
     params[1, :] = np.random.choice(DB_values, nthreads)  # Choose randomly from DB_values
@@ -105,31 +108,32 @@ if __name__ == "__main__":
     params[3, :] = np.random.choice(k_values, nthreads)   # Choose randomly from k_values
     init_A, init_B = get_initial_configuration(0.2, 200)
     # simulates waiting time (e.g., an API call/response)
-    secs = time()
-    A_arr = run_threads(params)
-    print("%.4f" % (time() - secs))
+    # secs = time()
+    # A_arr = run_threads(params)
+    # print("%.4f" % (time() - secs))
     
-    bad_params = []
-    j = 0
-    for i in range(nthreads):
-        if((A_arr[i][0].sum()>199.9999 and A_arr[i][0].sum()<200) or np.isnan(A_arr[i]).sum()>0):
-            bad_params.append(i)
-    good_params = [i for i in range(nthreads) if i not in bad_params]
-    
-    x = int(np.ceil(len(good_params)/3))
-    y = 3
-    fig, axs = plt.subplots(x, y, figsize = (x,4*y))
-    axs = axs.flatten()
-    for i in good_params:
-        axs[j].imshow(A_arr[i], cmap = "Greys")
-        axs[j].set_title(f"{params[:,i]}")
-        j+=1
-    plt.savefig("good_results.png")
-    good_params = [i for i in range(nthreads) if i not in bad_params]
+    # bad_params = []
+    # j = 0
+    # for i in range(nthreads):
+    #     if((A_arr[i][0].sum()>199.9999 and A_arr[i][0].sum()<200) or np.isnan(A_arr[i]).sum()>0):
+    #         bad_params.append(i)
+    # good_params = [i for i in range(nthreads) if i not in bad_params]
+    # for i in good_params:
+    #     plt.imshow(A_arr[i], cmap = "Greys")
+    #     plt.axis('off')
+    #     t = [ "%.3f_"%i for i in params[:,i]]
+    #     plt.savefig("pats/"+"".join(t)+".png", bbox_inches=0)
+    # good_params = [i for i in range(nthreads) if i not in bad_params]
     fig, axs = plt.subplots(2, 1, figsize = (8,4))
     axs = axs.flatten()
-    axs[0].scatter(params[0, bad_params], params[1, bad_params], color = "blue")
-    axs[0].scatter(params[0, good_params], params[1, good_params], color = "red")
-    axs[1].scatter(params[2, bad_params], params[3, bad_params], color = "blue")
-    axs[1].scatter(params[2, good_params], params[3, good_params], color = "red")
-    plt.savefig("param_space.png")
+    axs[0].imshow(init_A, cmap="Reds")
+    axs[0].axis('off')
+    axs[0].set_title('initial concentration of U')
+    axs[1].imshow(init_B, cmap="Blues")
+    axs[1].set_title('initial concentration of V')
+    axs[1].axis('off')
+    # axs[0].scatter(params[0, bad_params], params[1, bad_params], color = "blue")
+    # axs[0].scatter(params[0, good_params], params[1, good_params], color = "red")
+    # axs[1].scatter(params[2, bad_params], params[3, bad_params], color = "blue")
+    # axs[1].scatter(params[2, good_params], params[3, good_params], color = "red")
+    plt.savefig("ititial_same.png")
